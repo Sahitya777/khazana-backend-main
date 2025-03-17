@@ -1,9 +1,9 @@
-from typing import List, Dict
+import json
+from typing import Dict
 from sqlalchemy.orm import Session
 from app.model.user import Allocation
 
 def calculate_fund_overlaps(db: Session) -> Dict:
-    # Predefined colors for mutual funds and stocks
     mutual_fund_colors = {
         "ICICI Prudential Bluechip Fund": "#ff9800",
         "HDFC Top 100 Fund": "#c2185b",
@@ -24,39 +24,38 @@ def calculate_fund_overlaps(db: Session) -> Dict:
         "State Bank of India (SBI)": "#9c27b0",
     }
 
-    # Fetch all allocations with mutual fund names and stock allocations
     allocations = db.query(
         Allocation.mutualfund_name,
         Allocation.stock_allocation
     ).all()
 
-    # Create nodes list
-    nodes = []
-    for fund_name, color in mutual_fund_colors.items():
-        nodes.append({"name": fund_name, "fill": color})
+    nodes = [{"name": name, "fill": color} for name, color in mutual_fund_colors.items()]
+    nodes += [{"name": name, "fill": color} for name, color in stock_colors.items()]
 
-    for stock_name, color in stock_colors.items():
-        nodes.append({"name": stock_name, "fill": color})
-
-    # Create links list
     links = []
     for allocation in allocations:
         fund_name = allocation.mutualfund_name
         stock_allocation = allocation.stock_allocation
 
-        # Find the index of the mutual fund in the nodes list
-        fund_index = next(i for i, node in enumerate(nodes) if node["name"] == fund_name)
+        if isinstance(stock_allocation, str):  
+            stock_allocation = json.loads(stock_allocation)
+
+        fund_index = next((i for i, node in enumerate(nodes) if node["name"] == fund_name), None)
+        if fund_index is None:
+            print(f"Skipping unknown fund: {fund_name}")  # Debugging line
+            continue  
 
         for stock_name, allocation_percentage in stock_allocation.items():
-            # Find the index of the stock in the nodes list
-            stock_index = next(i for i, node in enumerate(nodes) if node["name"] == stock_name)
+            stock_index = next((i for i, node in enumerate(nodes) if node["name"] == stock_name), None)
+            if stock_index is None:
+                print(f"Skipping unknown stock: {stock_name}")  # Debugging line
+                continue  
 
-            # Add the link
             links.append({
                 "source": fund_index,
                 "target": stock_index,
                 "value": allocation_percentage,
-                "stroke": stock_colors[stock_name]
+                "stroke": stock_colors.get(stock_name, "#000000")
             })
 
     return {"nodes": nodes, "links": links}

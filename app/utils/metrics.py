@@ -49,6 +49,20 @@ funds = [
     }
 ]
 
+def calculate_initial_investment():
+    """Calculate the total initial investment (sum of all fund amounts)."""
+    return sum(fund["amount"] for fund in funds)
+
+def get_best_performing_fund():
+    """Find the fund with the highest return percentage."""
+    best_fund = max(funds, key=lambda fund: fund["returns_since_investment"])
+    return {"name": best_fund["name"], "returns": best_fund["returns_since_investment"]}
+
+def get_worst_performing_fund():
+    """Find the fund with the lowest return percentage."""
+    worst_fund = min(funds, key=lambda fund: fund["returns_since_investment"])
+    return {"name": worst_fund["name"], "returns": worst_fund["returns_since_investment"]}
+
 def calculate_daily_growth_rate(fund):
     """Calculate the daily growth rate based on total return since investment."""
     total_days = (current_date - fund["investment_date"]).days
@@ -137,6 +151,42 @@ def create_data_sets():
         ]
     
     return data_sets
+
+def get_user_investment_data(db):
+    cdate= datetime.datetime(2025, 3, 16)
+    current_investment=calculate_portfolio_value_at(cdate)
+    initial_investment=calculate_initial_investment()
+    best_fund=get_best_performing_fund()
+    worst_fund=get_worst_performing_fund()
+
+    user_data=[
+        {
+            "title":'Current',
+            "subtitle":'Investment Value',
+            "value":current_investment,
+            "return":round((((current_investment-initial_investment)/initial_investment)*100),2)
+        },
+        {
+            "title":'Initial',
+            "subtitle":'Investment Value',
+            "value":initial_investment,
+            "return":0
+        },
+        {
+            "title":'Best',
+            "subtitle":'Performing Scheme',
+            "value":best_fund["name"],
+            "return":best_fund["returns"]*100
+        },
+        {
+            "title":'Worst',
+            "subtitle":'Performing Scheme',
+            "value":worst_fund["name"],
+            "return":worst_fund["returns"]*100
+        }
+    ]
+
+    return user_data
 
 # Generate the data sets
 # portfolio_data_sets = create_data_sets()

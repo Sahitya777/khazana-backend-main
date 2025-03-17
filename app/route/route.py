@@ -6,7 +6,7 @@ from app.model.user import User, MutualFund, Investment, Allocation
 from app.schema.schema import UserCreate, MutualFundResponse, InvestmentResponse
 from app.utils.util import hash_password, verify_password, create_access_token, verify_access_token
 from app.utils.overlaps import calculate_fund_overlaps
-from app.utils.metrics import create_data_sets
+from app.utils.metrics import create_data_sets, get_user_investment_data
 from typing import List
 
 router = APIRouter()
@@ -74,7 +74,7 @@ def get_metrics():
     metrics = create_data_sets()
     return metrics
 
-@router.get("/investments/")
+@router.get("/portfolio_composition/")
 def get_portfolio_composition(db: Session = Depends(get_db)):
     # Fetch all investments with mutual fund details
     investment_data = (
@@ -119,3 +119,7 @@ def get_portfolio_composition(db: Session = Depends(get_db)):
 @router.get("/fund-overlaps/")
 def fund_overlaps(db: Session = Depends(get_db)):
     return calculate_fund_overlaps(db)
+
+@router.get("/user-investments/")
+def get_user_investments(db: Session = Depends(get_db)):
+    return get_user_investment_data(db)
